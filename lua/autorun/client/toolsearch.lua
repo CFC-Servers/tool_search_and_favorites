@@ -33,7 +33,7 @@ hook.Add( "PostReloadToolsMenu", "ToolSearch", function()
         if self:GetValue() == "" then
             surface.SetFont( "DermaDefault" )
             local txt = "Search Tool..."
-            local txtW, txtH = surface.GetTextSize( txt )
+            local _, txtH = surface.GetTextSize( txt )
             surface.SetTextPos( 3, h * 0.5 - txtH * 0.5 + 1 )
             surface.SetTextColor( Color( 0, 0, 0, 192 ) )
             surface.DrawText( txt )
