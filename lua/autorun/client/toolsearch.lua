@@ -50,7 +50,7 @@ hook.Add( "PostReloadToolsMenu", "ToolSearch", function()
         for _, cat in next, list.pnlCanvas:GetChildren() do
             local hidden = 0
 
-            for k, pnl in next, cat:GetChildren() do
+            for _, pnl in next, cat:GetChildren() do
                 if pnl.ClassName ~= "DCategoryHeader" then
                     if language.GetPhrase( pnl:GetText() ):lower():match( str:lower() ) and ( not cl_toolsearch_favoritesonly:GetBool() or cl_toolsearch_favoritesonly:GetBool() and favorites[pnl.Name] ) then
                         pnl:SetVisible( true )
@@ -118,7 +118,7 @@ hook.Add( "PostReloadToolsMenu", "ToolSearch", function()
 
     local function showFavoritesOnly( showFavs )
         for _, cat in next, list.pnlCanvas:GetChildren() do
-            for k, pnl in next, cat:GetChildren() do
+            for _, pnl in next, cat:GetChildren() do
                 if pnl.ClassName ~= "DCategoryHeader" then
                     if showFavs then
                         if favorites[pnl.Name] then
@@ -155,7 +155,7 @@ hook.Add( "PostReloadToolsMenu", "ToolSearch", function()
                         end
                     end
 
-                    function pnl:DoRightClick( w, h )
+                    function pnl:DoRightClick()
                         self.Favorite = not self.Favorite
                         favorites[self.Name] = self.Favorite
                         file.Write( "tools_favorites.txt", util.TableToJSON( favorites ) )
