@@ -2,8 +2,10 @@ local cl_toolsearch_autoselect = CreateClientConVar( "cl_toolsearch_autoselect",
 local cl_toolsearch_favoritesonly = CreateClientConVar( "cl_toolsearch_favoritesonly", "0" )
 local cl_toolsearch_favoritestyle = CreateClientConVar( "cl_toolsearch_favoritestyle", "1" )
 local favorites = util.JSONToTable( file.Read( "tools_favorites.txt", "DATA" ) or "{}" ) or {}
+local star = Material( "icon16/star.png" )
+local small_star = Material( "icon16/bullet_star.png" )
 
-hook.Add( "PostReloadToolsMenu", "ToolSearch", function()
+hook.Add( "PostReloadToolsMenu", "ToolFavourites", function()
     local toolPanel = g_SpawnMenu.ToolMenu.ToolPanels[1]
     local divider = toolPanel.HorizontalDivider
     local list = toolPanel.List
@@ -14,23 +16,15 @@ hook.Add( "PostReloadToolsMenu", "ToolSearch", function()
         return
     end
 
-    local panel = vgui.Create( "EditablePanel", divider )
-    list:SetParent( panel )
-    list:Dock( FILL )
-
-    local favsOnly = panel:Add( "EditablePanel" )
-    favsOnly:Dock( TOP )
-    favsOnly:DockMargin( 0, 0, 0, 2 )
-    favsOnly:SetTall( 20 )
-    local check = divider:Add( "DCheckBoxLabel" )
-    check:SetConVar( "cl_toolsearch_favoritesonly" )
     local showFavsOnly = cl_toolsearch_favoritesonly:GetBool()
+
+    local check = vgui.Create( "DCheckBoxLabel", divider:GetChild( 1 ) )
+    check:SetConVar( "cl_toolsearch_favoritesonly" )
     check:SetChecked( showFavsOnly )
     check:SetText( "Show Favorites Only" )
-    check:SetPos( 0, 3 )
     check:SetBright( true )
-    local star = Material( "icon16/star.png" )
-    local small_star = Material( "icon16/bullet_star.png" )
+    check:DockMargin( 0, 0, 0, 5 )
+    check:Dock( TOP )
 
     local function showFavoritesOnly( showFavs )
         for _, cat in next, list.pnlCanvas:GetChildren() do
@@ -136,7 +130,6 @@ hook.Add( "PostReloadToolsMenu", "ToolSearch", function()
         showFavoritesOnly( cl_toolsearch_favoritesonly:GetBool() )
     end
 
-    divider:SetLeft( panel )
     showFavoritesOnly( showFavsOnly )
 end )
 
@@ -145,19 +138,8 @@ language.Add( "favorite_style_2", "Star Icon" )
 language.Add( "favorite_style_3", "Small Star Icon" )
 language.Add( "favorite_style_4", "Nothing" )
 
-hook.Add( "PopulateToolMenu", "ToolSearch", function()
-    spawnmenu.AddToolMenuOption( "Utilities", "User", "ToolSearch", "Tool Search", "", "", function( pnl )
-        pnl:AddControl( "Header", {
-            Description = "Configure the Tool Search's behavior."
-        } )
-
-        pnl:AddControl( "CheckBox", {
-            Label = "Auto-Select",
-            Command = "cl_toolsearch_autoselect",
-        } )
-
-        pnl:ControlHelp( "If enabled, this will select the top most tool automatically when you do a search query." )
-
+hook.Add( "PopulateToolMenu", "ToolFavourites", function()
+    spawnmenu.AddToolMenuOption( "Utilities", "User", "ToolFavourites", "Tool Search", "", "", function( pnl )
         pnl:AddControl( "Header", {
             Description = "Right-click tools to make them your favorites!"
         } )
