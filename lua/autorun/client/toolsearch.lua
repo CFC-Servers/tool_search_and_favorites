@@ -44,7 +44,7 @@ hook.Add( "PostReloadToolsMenu", "ToolSearch", function()
 
     search:SetUpdateOnType( true )
 
-    function search:OnValueChange( str, init )
+    function search:OnValueChange( str, value )
         local i = 0
 
         for _, cat in next, list.pnlCanvas:GetChildren() do
@@ -55,7 +55,7 @@ hook.Add( "PostReloadToolsMenu", "ToolSearch", function()
                     if language.GetPhrase( pnl:GetText() ):lower():match( str:lower() ) and ( not cl_toolsearch_favoritesonly:GetBool() or cl_toolsearch_favoritesonly:GetBool() and favorites[pnl.Name] ) then
                         pnl:SetVisible( true )
 
-                        if cl_toolsearch_autoselect:GetBool() and not init then
+                        if cl_toolsearch_autoselect:GetBool() and not value then
                             i = i + 1
 
                             if i == 1 then
