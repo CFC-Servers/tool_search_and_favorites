@@ -12,7 +12,6 @@ hook.Add( "PostReloadToolsMenu", "ToolFavourites", function()
 
     if not IsValid( divider ) then
         error( "Something is modifying the spawnmenu and is preventing the tool search addon from working!" )
-
         return
     end
 
@@ -139,7 +138,7 @@ language.Add( "favorite_style_3", "Small Star Icon" )
 language.Add( "favorite_style_4", "Nothing" )
 
 hook.Add( "PopulateToolMenu", "ToolFavourites", function()
-    spawnmenu.AddToolMenuOption( "Utilities", "User", "ToolFavourites", "Tool Search", "", "", function( pnl )
+    spawnmenu.AddToolMenuOption( "Utilities", "User", "ToolFavourites", "Tool Favourites", "", "", function( pnl )
         pnl:AddControl( "Header", {
             Description = "Right-click tools to make them your favorites!"
         } )
