@@ -1,4 +1,3 @@
-local cl_toolsearch_autoselect = CreateClientConVar( "cl_toolsearch_autoselect", "1" )
 local cl_toolsearch_favoritesonly = CreateClientConVar( "cl_toolsearch_favoritesonly", "0" )
 local cl_toolsearch_favoritestyle = CreateClientConVar( "cl_toolsearch_favoritestyle", "1" )
 local favorites = util.JSONToTable( file.Read( "tools_favorites.txt", "DATA" ) or "{}" ) or {}
@@ -77,8 +76,6 @@ hook.Add( "PostReloadToolsMenu", "ToolFavourites", function()
             end
         end
 
-        local i = 0
-
         for _, cat in next, list.pnlCanvas:GetChildren() do
             local hidden = 0
 
@@ -86,17 +83,6 @@ hook.Add( "PostReloadToolsMenu", "ToolFavourites", function()
                 if pnl.ClassName ~= "DCategoryHeader" then
                     if not cl_toolsearch_favoritesonly:GetBool() or cl_toolsearch_favoritesonly:GetBool() and favorites[pnl.Name] then
                         pnl:SetVisible( true )
-
-                        if cl_toolsearch_autoselect:GetBool() and not value then
-                            i = i + 1
-
-                            if i == 1 then
-                                pnl:SetSelected( true )
-                                pnl:DoClick()
-                            else
-                                pnl:SetSelected( false )
-                            end
-                        end
                     else
                         pnl:SetVisible( false )
                         hidden = hidden + 1
