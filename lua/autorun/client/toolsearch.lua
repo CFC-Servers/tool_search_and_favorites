@@ -10,7 +10,7 @@ hook.Add( "PostReloadToolsMenu", "ToolFavourites", function()
     local list = toolPanel.List
 
     if not IsValid( divider ) then
-        error( "Something is modifying the spawnmenu and is preventing the tool search addon from working!" )
+        print( "Something is modifying the spawnmenu and is preventing the tool search addon from working!" )
         return
     end
 
