@@ -21,7 +21,7 @@ function ToolFavorites.PaintItem( self, w, h )
     local ret = self:_OriginalPaint( w, h )
 
     if self._isFavorite then
-        local style = ToolFavorites.showFavoriteStyle
+        local style = ToolFavorites.style
 
         if style == 2 or style == 3 then
             surface.SetMaterial( style == 3 and ToolFavorites.matSmallStar or ToolFavorites.matStar )
@@ -46,16 +46,12 @@ hook.Add( "PostReloadToolsMenu", "ToolFavorites", function()
         return
     end
 
-    toolPanel._OrigUpdateToolDisabledStatus = toolPanel.UpdateToolDisabledStatus
-    toolPanel._OrigPerformToolFiltering = toolPanel.PerformToolFiltering
-
-    local function PerformFiltering( self )
-        -- Apply our own filtering on top of the original
-        local showFavoriteStyle = ToolFavorites.cvarFavoriteStyle:GetInt()
+    local function PerformFavoritesFiltering( self )
         local showFavoritesOnly = ToolFavorites.cvarFavoritesOnly:GetBool()
+        local style = ToolFavorites.cvarFavoriteStyle:GetInt()
         local favorites = ToolFavorites.favorites
 
-        ToolFavorites.showFavoriteStyle = showFavoriteStyle
+        ToolFavorites.style = style
 
         for _, category in ipairs( self.List.pnlCanvas:GetChildren() ) do
             local catVisibleNum = 0
@@ -82,18 +78,20 @@ hook.Add( "PostReloadToolsMenu", "ToolFavorites", function()
         end
     end
 
-    -- This is a modified version of the function from `gamemodes/sandbox/gamemode/spawnmenu/toolpanel.lua`
+    -- Remember the original functions from `gamemodes/sandbox/gamemode/spawnmenu/toolpanel.lua`
+    toolPanel._OrigUpdateToolDisabledStatus = toolPanel.UpdateToolDisabledStatus
+    toolPanel._OrigPerformToolFiltering = toolPanel.PerformToolFiltering
+
     toolPanel.UpdateToolDisabledStatus = function( self )
         self:_OrigUpdateToolDisabledStatus()
 
-        PerformFiltering( self )
+        PerformFavoritesFiltering( self )
     end
 
-    -- This is a modified version of the function from `gamemodes/sandbox/gamemode/spawnmenu/toolpanel.lua`
     toolPanel.PerformToolFiltering = function( self, text )
         self:_OrigPerformToolFiltering( text )
 
-        PerformFiltering( self )
+        PerformFavoritesFiltering( self )
 
         self.List.pnlCanvas:InvalidateLayout()
         self.List:InvalidateLayout()
