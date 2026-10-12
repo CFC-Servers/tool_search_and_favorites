@@ -37,6 +37,25 @@ function ToolFavorites.PaintItem( self, w, h )
     return ret
 end
 
+function ToolFavorites.RightClickItem( self )
+    -- Open the same menu that the original DoRightClick function opens
+    local menu = DermaMenu()
+
+    menu:AddOption( "#spawnmenu.menu.copy", function()
+        SetClipboardText( self.Name )
+    end ):SetIcon( "icon16/page_copy.png" )
+
+    menu:AddOption( self._isFavorite and "Unfavorite" or "Favorite", function()
+        self._isFavorite = not self._isFavorite
+        sound.Play( self._isFavorite and "garrysmod/content_downloaded.wav" or "garrysmod/balloon_pop_cute.wav", Vector(), 0, 120, 0.5 )
+
+        ToolFavorites.favorites[self.Name] = self._isFavorite
+        ToolFavorites.Save()
+    end ):SetIcon( self._isFavorite and "icon16/delete.png" or "icon16/star.png" )
+
+    menu:Open()
+end
+
 hook.Add( "PostReloadToolsMenu", "ToolFavorites", function()
     local toolPanel = g_SpawnMenu.ToolMenu.ToolPanels[1]
     local toolPanelDivider = toolPanel.HorizontalDivider
@@ -69,8 +88,7 @@ hook.Add( "PostReloadToolsMenu", "ToolFavorites", function()
 
                     panel._OriginalPaint = panel._OriginalPaint or panel.Paint
                     panel.Paint = ToolFavorites.PaintItem
-
-                    -- TODO: Override right-click
+                    panel.DoRightClick = ToolFavorites.RightClickItem
                 end
             end
 
