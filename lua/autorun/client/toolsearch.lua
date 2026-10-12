@@ -1,150 +1,144 @@
-local cl_toolsearch_favoritesonly = CreateClientConVar( "cl_toolsearch_favoritesonly", "0" )
-local cl_toolsearch_favoritestyle = CreateClientConVar( "cl_toolsearch_favoritestyle", "1" )
-local favorites = util.JSONToTable( file.Read( "tools_favorites.txt", "DATA" ) or "{}" ) or {}
-local star = Material( "icon16/star.png" )
-local small_star = Material( "icon16/bullet_star.png" )
+language.Add( "tools_favorites.style_1", "Color Change" )
+language.Add( "tools_favorites.style_2", "Star Icon" )
+language.Add( "tools_favorites.style_3", "Small Star Icon" )
+language.Add( "tools_favorites.style_4", "Nothing" )
 
-hook.Add( "PostReloadToolsMenu", "ToolFavourites", function()
+local ToolFavorites = {
+    cvarFavoritesOnly = CreateClientConVar( "cl_toolsearch_favoritesonly", "0" ),
+    cvarFavoriteStyle = CreateClientConVar( "cl_toolsearch_favoritestyle", "1" ),
+
+    matStar = Material( "icon16/star.png" ),
+    matSmallStar = Material( "icon16/bullet_star.png" ),
+
+    favorites = util.JSONToTable( file.Read( "tools_favorites.txt", "DATA" ) or "{}" ) or {}
+}
+
+function ToolFavorites.Save()
+    file.Write( "tools_favorites.txt", util.TableToJSON( ToolFavorites.favorites ) )
+end
+
+function ToolFavorites.PaintItem( self, w, h )
+    local ret = self:_OriginalPaint( w, h )
+
+    if self._isFavorite then
+        local style = ToolFavorites.style
+
+        if style == 2 or style == 3 then
+            surface.SetMaterial( style == 3 and ToolFavorites.matSmallStar or ToolFavorites.matStar )
+            surface.SetDrawColor( 255, 255, 255, 255 )
+            surface.DrawTexturedRect( w - 16, h * 0.5 - 8, 16, 16 )
+
+        elseif style == 1 then
+            surface.SetDrawColor( 255, 235, 0, 164 )
+            surface.DrawRect( 0, 0, w, h )
+        end
+    end
+
+    return ret
+end
+
+function ToolFavorites.RightClickItem( self )
+    -- Open the same menu that the original DoRightClick function opens
+    local menu = DermaMenu()
+
+    menu:AddOption( "#spawnmenu.menu.copy", function()
+        SetClipboardText( self.Name )
+    end ):SetIcon( "icon16/page_copy.png" )
+
+    menu:AddOption( self._isFavorite and "Unfavorite" or "Favorite", function()
+        self._isFavorite = not self._isFavorite
+        sound.Play( self._isFavorite and "garrysmod/content_downloaded.wav" or "garrysmod/balloon_pop_cute.wav", Vector(), 0, 120, 0.5 )
+
+        ToolFavorites.favorites[self.Name] = self._isFavorite
+        ToolFavorites.Save()
+    end ):SetIcon( self._isFavorite and "icon16/delete.png" or "icon16/star.png" )
+
+    menu:Open()
+end
+
+hook.Add( "PostReloadToolsMenu", "ToolFavorites", function()
     local toolPanel = g_SpawnMenu.ToolMenu.ToolPanels[1]
-    local divider = toolPanel.HorizontalDivider
-    local list = toolPanel.List
+    local toolPanelDivider = toolPanel.HorizontalDivider
 
-    if not IsValid( divider ) then
+    if not IsValid( toolPanelDivider ) then
         print( "Something is modifying the spawnmenu and is preventing the tool search addon from working!" )
         return
     end
 
-    local showFavsOnly = cl_toolsearch_favoritesonly:GetBool()
+    local function PerformFavoritesFiltering( self )
+        local showFavoritesOnly = ToolFavorites.cvarFavoritesOnly:GetBool()
+        local style = ToolFavorites.cvarFavoriteStyle:GetInt()
+        local favorites = ToolFavorites.favorites
 
-    local check = vgui.Create( "DCheckBoxLabel", divider:GetChild( 1 ) )
-    check:SetConVar( "cl_toolsearch_favoritesonly" )
-    check:SetChecked( showFavsOnly )
-    check:SetText( "Show Favorites Only" )
-    check:SetBright( true )
-    check:DockMargin( 0, 0, 0, 5 )
-    check:Dock( TOP )
+        ToolFavorites.style = style
 
-    local function showFavoritesOnly( showFavs )
-        for _, cat in next, list.pnlCanvas:GetChildren() do
-            for _, pnl in next, cat:GetChildren() do
-                if pnl.ClassName ~= "DCategoryHeader" then
-                    if showFavs then
-                        if favorites[pnl.Name] then
-                            pnl:SetVisible( true )
-                            pnl.Favorite = true
-                        else
-                            pnl:SetVisible( false )
-                            pnl.Favorite = false
-                        end
+        for _, category in ipairs( self.List.pnlCanvas:GetChildren() ) do
+            local catVisibleNum = 0
+
+            for _, panel in ipairs( category:GetChildren() ) do
+                if panel ~= category.Header then
+                    panel._isFavorite = favorites[panel.Name] == true
+
+                    if showFavoritesOnly and not panel._isFavorite then
+                        panel:SetVisible( false )
+
+                    elseif panel:IsVisible() then
+                        catVisibleNum = catVisibleNum + 1
                     end
 
-                    pnl.Favorite = favorites[pnl.Name]
-
-                    if not pnl._Paint then
-                        pnl._Paint = pnl.Paint
-
-                        function pnl:Paint( w, h )
-                            local ret = self:_Paint( w, h )
-
-                            if self.Favorite then
-                                local way = cl_toolsearch_favoritestyle:GetInt()
-
-                                if way == 2 or way == 3 then
-                                    surface.SetMaterial( way == 3 and small_star or star )
-                                    surface.SetDrawColor( Color( 255, 255, 255 ) )
-                                    surface.DrawTexturedRect( w - 16, h * 0.5 - 8, 16, 16 )
-                                elseif way == 1 then
-                                    surface.SetDrawColor( Color( 255, 235, 0, 164 ) )
-                                    surface.DrawRect( 0, 0, w, h )
-                                end
-                            end
-
-                            return ret
-                        end
-                    end
-
-                    function pnl:DoRightClick()
-                        self.Favorite = not self.Favorite
-                        favorites[self.Name] = self.Favorite
-                        file.Write( "tools_favorites.txt", util.TableToJSON( favorites ) )
-                        surface.PlaySound( "garrysmod/content_downloaded.wav" )
-                    end
-                end
-
-                cat:InvalidateLayout()
-                list.pnlCanvas:InvalidateLayout()
-            end
-        end
-
-        for _, cat in next, list.pnlCanvas:GetChildren() do
-            local hidden = 0
-
-            for _, pnl in next, cat:GetChildren() do
-                if pnl.ClassName ~= "DCategoryHeader" then
-                    if not cl_toolsearch_favoritesonly:GetBool() or cl_toolsearch_favoritesonly:GetBool() and favorites[pnl.Name] then
-                        pnl:SetVisible( true )
-                    else
-                        pnl:SetVisible( false )
-                        hidden = hidden + 1
-                    end
+                    panel._OriginalPaint = panel._OriginalPaint or panel.Paint
+                    panel.Paint = ToolFavorites.PaintItem
+                    panel.DoRightClick = ToolFavorites.RightClickItem
                 end
             end
 
-            if hidden >= #cat:GetChildren() - 1 then
-                cat:SetVisible( false )
-            else
-                cat:SetVisible( true )
-            end
-
-            cat:InvalidateLayout()
-            list.pnlCanvas:InvalidateLayout()
+            category:SetVisible( catVisibleNum > 0 )
         end
-
-        init = true
     end
 
-    local fix = true
+    -- Remember the original functions from `gamemodes/sandbox/gamemode/spawnmenu/toolpanel.lua`
+    toolPanel._OrigUpdateToolDisabledStatus = toolPanel.UpdateToolDisabledStatus
+    toolPanel._OrigPerformToolFiltering = toolPanel.PerformToolFiltering
 
-    function check:OnChange()
-        if fix then
-            fix = nil
+    toolPanel.UpdateToolDisabledStatus = function( self )
+        self:_OrigUpdateToolDisabledStatus()
 
-            return
-        end
-
-        showFavoritesOnly( cl_toolsearch_favoritesonly:GetBool() )
+        PerformFavoritesFiltering( self )
     end
 
-    showFavoritesOnly( showFavsOnly )
+    toolPanel.PerformToolFiltering = function( self, text )
+        self:_OrigPerformToolFiltering( text )
+
+        PerformFavoritesFiltering( self )
+
+        self.List.pnlCanvas:InvalidateLayout()
+        self.List:InvalidateLayout()
+    end
+
+    local checkFavsOnly = vgui.Create( "DCheckBoxLabel", toolPanelDivider:GetChild( 1 ) )
+    checkFavsOnly:SetChecked( ToolFavorites.cvarFavoritesOnly:GetBool() )
+    checkFavsOnly:SetText( "Favorites Only" )
+    checkFavsOnly:SetBright( true )
+    checkFavsOnly:DockMargin( 0, 0, 0, 2 )
+    checkFavsOnly:Dock( TOP )
+
+    toolPanel:UpdateToolDisabledStatus()
+
+    checkFavsOnly.OnChange = function( _, checked )
+        ToolFavorites.cvarFavoritesOnly:SetBool( checked )
+        toolPanel:UpdateToolDisabledStatus()
+    end
 end )
 
-language.Add( "favorite_style_1", "Color Change" )
-language.Add( "favorite_style_2", "Star Icon" )
-language.Add( "favorite_style_3", "Small Star Icon" )
-language.Add( "favorite_style_4", "Nothing" )
+hook.Add( "PopulateToolMenu", "ToolFavorites", function()
+    spawnmenu.AddToolMenuOption( "Utilities", "User", "ToolFavorites", "Tool Favourites", nil, nil, function( panel )
+        panel:Help( "Right-click tools to add them to your favorites!" )
 
-hook.Add( "PopulateToolMenu", "ToolFavourites", function()
-    spawnmenu.AddToolMenuOption( "Utilities", "User", "ToolFavourites", "Tool Favourites", "", "", function( pnl )
-        pnl:AddControl( "Header", {
-            Description = "Right-click tools to make them your favorites!"
-        } )
-
-        pnl:AddControl( "ListBox", {
-            Options = {
-                ["#favorite_style_1"] = {
-                    cl_toolsearch_favoritestyle = 1
-                },
-                ["#favorite_style_2"] = {
-                    cl_toolsearch_favoritestyle = 2
-                },
-                ["#favorite_style_3"] = {
-                    cl_toolsearch_favoritestyle = 3
-                },
-                ["#favorite_style_4"] = {
-                    cl_toolsearch_favoritestyle = 4
-                },
-            },
-            Label = "Favorite Tool Style"
-        } )
+        local comboStyle = panel:ComboBox( "Favorite Tool Style", "cl_toolsearch_favoritestyle" )
+        comboStyle:SetSortItems( false )
+        comboStyle:AddChoice( "#tools_favorites.style_1", 1 )
+        comboStyle:AddChoice( "#tools_favorites.style_2", 2 )
+        comboStyle:AddChoice( "#tools_favorites.style_3", 3 )
+        comboStyle:AddChoice( "#tools_favorites.style_4", 4 )
     end )
 end )
