@@ -101,14 +101,14 @@ hook.Add( "PostReloadToolsMenu", "ToolFavorites", function()
     toolPanel._OrigPerformToolFiltering = toolPanel.PerformToolFiltering
 
     toolPanel.UpdateToolDisabledStatus = function( self )
-        self:_OrigUpdateToolDisabledStatus()
+        if not IsValid( LocalPlayer() ) then return end
 
+        self:_OrigUpdateToolDisabledStatus()
         PerformFavoritesFiltering( self )
     end
 
     toolPanel.PerformToolFiltering = function( self, text )
         self:_OrigPerformToolFiltering( text )
-
         PerformFavoritesFiltering( self )
 
         self.List.pnlCanvas:InvalidateLayout()
